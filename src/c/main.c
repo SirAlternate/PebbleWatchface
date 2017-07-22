@@ -7,12 +7,14 @@ static Layer *s_accent_layer;
 static Layer *s_battery_layer;
 static TextLayer *s_date_layer;
 static TextLayer *s_temp_layer;
+static TextLayer *s_location_layer;
 static TextLayer *s_time_layer;
 static TextLayer *s_summary_layer;
 static TextLayer *s_steps_layer;
 
 static int s_battery_level;
 static int s_temperature;
+static char* s_location;
 static char* s_summary;
 
 
@@ -52,6 +54,7 @@ static void update_weather() {
 
   text_layer_set_text(s_temp_layer,  temp_buffer);
   text_layer_set_text(s_summary_layer,  s_summary);
+  text_layer_set_text(s_location_layer,  upcase(s_location));
 }
 
 static void update_time_and_date() {
@@ -85,7 +88,7 @@ static void draw_steps_layer() {
   text_layer_set_background_color(s_steps_layer, GColorClear);
   text_layer_set_text_alignment(s_steps_layer, GTextAlignmentCenter);
   text_layer_set_font(s_steps_layer, fonts_get_system_font(FONT_KEY_GOTHIC_14));
-  text_layer_set_text(s_steps_layer, "STEPS HERE");
+  text_layer_set_text(s_steps_layer, "0 STEPS");
 }
 
 static void draw_summary_layer() {
@@ -93,7 +96,7 @@ static void draw_summary_layer() {
   text_layer_set_background_color(s_summary_layer, GColorClear);
   text_layer_set_text_alignment(s_summary_layer, GTextAlignmentCenter);
   text_layer_set_font(s_summary_layer, fonts_get_system_font(FONT_KEY_GOTHIC_14));
-  text_layer_set_text(s_summary_layer, "Weather summary here");
+  text_layer_set_text(s_summary_layer, s_summary);
 }
 
 static void draw_time_layer() {
@@ -102,6 +105,14 @@ static void draw_time_layer() {
   text_layer_set_text_alignment(s_time_layer, GTextAlignmentCenter);
   text_layer_set_font(s_time_layer, fonts_get_system_font(FONT_KEY_ROBOTO_BOLD_SUBSET_49));
   text_layer_set_text(s_time_layer, "00:00");
+}
+
+static void draw_location_layer() {
+  text_layer_set_text_color(s_location_layer, GColorWhite);
+  text_layer_set_background_color(s_location_layer, GColorClear);
+  text_layer_set_text_alignment(s_location_layer, GTextAlignmentRight);
+  text_layer_set_font(s_location_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18));
+  text_layer_set_text(s_location_layer, "");
 }
 
 static void draw_temperature_layer() {
@@ -132,8 +143,9 @@ static void draw_accent_layer(Layer *layer, GContext *ctx) {
   GRect summary_bounds = GRect(0, 107, layer_get_bounds(layer).size.w, 37);
    
   graphics_context_set_fill_color(ctx, GColorBlueMoon);
-  
   graphics_fill_rect(ctx, topbar_bounds, 0, GCornersAll);
+  
+  graphics_context_set_fill_color(ctx, GColorPictonBlue);
   graphics_fill_rect(ctx, GRect(summary_bounds.origin.x, summary_bounds.origin.y, summary_bounds.size.w, 1), 0, GCornersAll);
   graphics_fill_rect(ctx, GRect(summary_bounds.origin.x, summary_bounds.origin.y+summary_bounds.size.h, summary_bounds.size.w, 1), 0, GCornersAll);
 }
@@ -170,9 +182,14 @@ static void main_window_load(Window *window) {
   layer_add_child(s_canvas_layer, text_layer_get_layer(s_date_layer));
   
   // Create temperature layer and add to canvas
-  s_temp_layer = text_layer_create(GRect(4, 30, bounds.size.w, 26));
+  s_temp_layer = text_layer_create(GRect(4, 30, 30, 26));
   draw_temperature_layer();
   layer_add_child(s_canvas_layer, text_layer_get_layer(s_temp_layer));
+  
+  // Create location layer and add to canvas
+  s_location_layer = text_layer_create(GRect(42, 30, bounds.size.w-42, 26));
+  draw_location_layer();
+  layer_add_child(s_canvas_layer, text_layer_get_layer(s_location_layer));
   
   // Create time layer and add to window
   s_time_layer = text_layer_create(GRect(0, 46, bounds.size.w, 50));
@@ -204,17 +221,17 @@ static void main_window_unload(Window *window) {
 static void tick_event_handler(struct tm *tick_time, TimeUnits units_changed) {
   update_time_and_date();
   
-//   if(tick_time->tm_min % 30 == 0) {
-//     // Begin dictionary
-//     DictionaryIterator *iter;
-//     app_message_outbox_begin(&iter);
+  if(tick_time->tm_min % 30 == 0) {
+    // Begin dictionary
+    DictionaryIterator *iter;
+    app_message_outbox_begin(&iter);
   
-//     // Add a key-value pair
-//     dict_write_uint8(iter, 0, 0);
+    // Add a key-value pair
+    dict_write_uint8(iter, 0, 0);
   
-//     // Send the message!
-//     app_message_outbox_send();
-//   }
+    // Send the message!
+    app_message_outbox_send();
+  }
 }
 
 static void app_message_dropped(AppMessageResult reason, void *context) {
@@ -231,11 +248,13 @@ static void app_message_sent(DictionaryIterator *iterator, void *context) {
 
 static void app_message_recieved(DictionaryIterator *iterator, void *context) {
   Tuple *temp_tuple = dict_find(iterator, MESSAGE_KEY_TEMPERATURE);
+  Tuple *location_tuple = dict_find(iterator, MESSAGE_KEY_LOCATION);
   Tuple *summary_tuple = dict_find(iterator, MESSAGE_KEY_SUMMARY);
   
   s_temperature = (int)temp_tuple->value->int32;
+  s_location = location_tuple->value->cstring;
   s_summary = summary_tuple->value->cstring;
-
+  
   update_weather();
 }
 

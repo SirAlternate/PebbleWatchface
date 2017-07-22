@@ -13,7 +13,8 @@
         "enableMultiJS": true,
         "messageKeys": [
             "TEMPERATURE",
-            "SUMMARY"
+            "SUMMARY",
+            "LOCATION"
         ],
         "projectType": "native",
         "resources": {
