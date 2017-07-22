@@ -11,7 +11,10 @@
         ],
         "displayName": "Minimalist Watchface",
         "enableMultiJS": true,
-        "messageKeys": [],
+        "messageKeys": [
+            "TEMPERATURE",
+            "SUMMARY"
+        ],
         "projectType": "native",
         "resources": {
             "media": []
