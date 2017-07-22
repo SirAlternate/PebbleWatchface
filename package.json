@@ -1,0 +1,30 @@
+{
+    "author": "Erik Saulnier",
+    "dependencies": {},
+    "keywords": [],
+    "name": "minimalist-watchface",
+    "pebble": {
+        "capabilities": [
+            "location",
+            "configurable",
+            "health"
+        ],
+        "displayName": "Minimalist Watchface",
+        "enableMultiJS": true,
+        "messageKeys": [],
+        "projectType": "native",
+        "resources": {
+            "media": []
+        },
+        "sdkVersion": "3",
+        "targetPlatforms": [
+            "aplite",
+            "basalt"
+        ],
+        "uuid": "36fde80b-4435-4d2e-b228-fb10c29af370",
+        "watchapp": {
+            "watchface": true
+        }
+    },
+    "version": "1.0.0"
+}
