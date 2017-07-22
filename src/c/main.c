@@ -77,18 +77,12 @@ static void update_battery(BatteryChargeState state) {
   layer_mark_dirty(s_battery_layer);
 }
 
-static void health_event_handler(HealthEventType event, void *context) {
-  if (event == HealthEventMovementUpdate) {
-    update_steps();
-  }
-}
-
 static void draw_steps_layer() {
   text_layer_set_text_color(s_steps_layer, GColorMalachite);
   text_layer_set_background_color(s_steps_layer, GColorClear);
   text_layer_set_text_alignment(s_steps_layer, GTextAlignmentCenter);
-  text_layer_set_font(s_steps_layer, fonts_get_system_font(FONT_KEY_GOTHIC_14));
-  text_layer_set_text(s_steps_layer, "0 STEPS");
+  text_layer_set_font(s_steps_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18));
+  text_layer_set_text(s_steps_layer, "? STEPS");
 }
 
 static void draw_summary_layer() {
@@ -96,7 +90,7 @@ static void draw_summary_layer() {
   text_layer_set_background_color(s_summary_layer, GColorClear);
   text_layer_set_text_alignment(s_summary_layer, GTextAlignmentCenter);
   text_layer_set_font(s_summary_layer, fonts_get_system_font(FONT_KEY_GOTHIC_14));
-  text_layer_set_text(s_summary_layer, s_summary);
+  text_layer_set_text(s_summary_layer, "Reading weather..");
 }
 
 static void draw_time_layer() {
@@ -120,7 +114,7 @@ static void draw_temperature_layer() {
   text_layer_set_background_color(s_temp_layer, GColorClear);
   text_layer_set_text_alignment(s_temp_layer, GTextAlignmentLeft);
   text_layer_set_font(s_temp_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18));
-  text_layer_set_text(s_temp_layer, "00\u00B0");
+  text_layer_set_text(s_temp_layer, "");
 }
 
 static void draw_date_layer() {
@@ -140,7 +134,7 @@ static void draw_battery_layer(Layer *layer, GContext *ctx) {
 
 static void draw_accent_layer(Layer *layer, GContext *ctx) {
   GRect topbar_bounds = GRect(0, 0, layer_get_bounds(layer).size.w, 30);
-  GRect summary_bounds = GRect(0, 107, layer_get_bounds(layer).size.w, 37);
+  GRect summary_bounds = GRect(0, 109, layer_get_bounds(layer).size.w, 37);
    
   graphics_context_set_fill_color(ctx, GColorBlueMoon);
   graphics_fill_rect(ctx, topbar_bounds, 0, GCornersAll);
@@ -187,22 +181,22 @@ static void main_window_load(Window *window) {
   layer_add_child(s_canvas_layer, text_layer_get_layer(s_temp_layer));
   
   // Create location layer and add to canvas
-  s_location_layer = text_layer_create(GRect(42, 30, bounds.size.w-42, 26));
+  s_location_layer = text_layer_create(GRect(42, 30, bounds.size.w-46, 26));
   draw_location_layer();
   layer_add_child(s_canvas_layer, text_layer_get_layer(s_location_layer));
   
   // Create time layer and add to window
-  s_time_layer = text_layer_create(GRect(0, 46, bounds.size.w, 50));
+  s_time_layer = text_layer_create(GRect(0, 48, bounds.size.w, 50)); //66 centered
   draw_time_layer();
   layer_add_child(s_canvas_layer, text_layer_get_layer(s_time_layer));
   
   // Create summary layer and add to window
-  s_summary_layer = text_layer_create(GRect(0, 109, bounds.size.w, 36));
+  s_summary_layer = text_layer_create(GRect(0, 111, bounds.size.w, 36));
   draw_summary_layer();
   layer_add_child(s_canvas_layer, text_layer_get_layer(s_summary_layer));
   
   // Create steps layer and add to window
-  s_steps_layer = text_layer_create(GRect(0, bounds.size.h - 20, bounds.size.w, 18));
+  s_steps_layer = text_layer_create(GRect(0, bounds.size.h - 22, bounds.size.w, 18));
   draw_steps_layer();
   layer_add_child(s_canvas_layer, text_layer_get_layer(s_steps_layer));
 }
@@ -217,6 +211,16 @@ static void main_window_unload(Window *window) {
   text_layer_destroy(s_summary_layer);
   text_layer_destroy(s_steps_layer);
 }
+
+static void health_event_handler(HealthEventType event, void *context) {
+  if (event == HealthEventMovementUpdate) {
+    update_steps();
+  }
+}
+
+// static void accel_tap_handler(AccelAxisType axis, int32_t direction) {
+//   APP_LOG(APP_LOG_LEVEL_INFO, "Tap!");
+// }
 
 static void tick_event_handler(struct tm *tick_time, TimeUnits units_changed) {
   update_time_and_date();
@@ -277,6 +281,7 @@ static void init() {
   battery_state_service_subscribe(update_battery);
   tick_timer_service_subscribe(MINUTE_UNIT, tick_event_handler);
   health_service_events_subscribe(health_event_handler, NULL);
+//   accel_tap_service_subscribe(accel_tap_handler);
   
   app_message_register_inbox_received(app_message_recieved);
   app_message_open(inbox_size, outbox_size);
